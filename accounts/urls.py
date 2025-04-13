@@ -1,56 +1,21 @@
 from django.urls import path
-from accounts.views import *
-from django.contrib.auth import views as auth_views
+from . import views
 
 # ✅ This fixes the NoReverseMatch issue for namespaced URLs
 app_name = 'accounts'
 
 urlpatterns = [
-    # User views
-    path('login/', login_page, name="login"),
-    path('register/', register_page, name="register"),
-    path('logout/', user_logout, name='logout'),
-    path('activate/<email_token>/', activate_email_account, name="activate_email"),
-
+    # Authentication
+    path('register/', views.register, name='register'),
+    path('login/', views.user_login, name='login'),
+    path('logout/', views.user_logout, name='logout'),
+    
     # Profile
-    path('profile/<str:username>/', profile_view, name='profile'),
-    path('change-password/', change_password, name='change_password'),
-    path('shipping-address/', update_shipping_address, name='shipping-address'),
-
-    # Password reset (Django built-in)
-    path('password_reset/', auth_views.PasswordResetView.as_view(
-        template_name='registration/password_reset_form.html',
-        email_template_name='registration/password_reset_email.html',
-        html_email_template_name='registration/password_reset_email.html'
-    ), name='password_reset'),
-
-    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(
-        template_name='registration/password_reset_done.html'
-    ), name='password_reset_done'),
-
-    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
-        template_name='registration/password_reset_confirm.html'
-    ), name='password_reset_confirm'),
-
-    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(
-        template_name='registration/password_reset_complete.html'
-    ), name='password_reset_complete'),
-
-    # Cart
-    path('cart/', cart, name="cart"),
-    path('add-to-cart/<uid>/', add_to_cart, name="add_to_cart"),
-    path('update_cart_item/', update_cart_item, name='update_cart_item'),
-    path('remove-cart/<uid>/', remove_cart, name="remove_cart"),
-    path('remove-coupon/<cart_id>/', remove_coupon, name="remove_coupon"),
-
-    # Payment success
-    path('success/', success, name="success"),
-
-    # Order history
-    path('order-history/', order_history, name='order_history'),
-    path('order-details/<str:order_id>/', order_details, name='order_details'),
-    path('order-details/<str:order_id>/download/', download_invoice, name='download_invoice'),
-
-    # Delete account
-    path('delete-account/', delete_account, name='delete_account'),
+    path('profile/<str:username>/', views.profile_view, name='profile'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('profile/change-password/', views.change_password, name='change_password'),
+    
+    # Orders and Wishlist
+    path('orders/', views.order_history, name='order_history'),
+    path('wishlist/', views.wishlist, name='wishlist'),
 ]

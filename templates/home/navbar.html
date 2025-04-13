@@ -51,14 +51,13 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarCollapse">
         <ul class="navbar-nav mr-auto" style="gap: 20px;">
-          <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'home:index' %}">Home</a></li>
           {% if user.is_authenticated %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'wishlist' %}">Wishlist ({{ request.user.wishlist.count }})</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'accounts:wishlist' %}">Wishlist ({{ request.user.wishlist.count }})</a></li>
           {% else %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'wishlist' %}">Wishlist</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">Wishlist</a></li>
           {% endif %}
-          <li class="nav-item"><a class="nav-link" href="{% url 'order_history' %}">Your Orders</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'product_reviews' %}">Your Reviews</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'accounts:order_history' %}">Your Orders</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'contact' %}">Contact Us</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About Us</a></li>
         </ul>
@@ -71,13 +70,13 @@
       <div class="row align-items-center">
         <div class="col-lg-2 col-4">
           <div class="brand-wrap">
-            <a href="{% url 'index' %}">
+            <a href="{% url 'home:index' %}">
               <img class="logo" src="{% static 'images/logo.png' %}" />
             </a>
           </div>
         </div>
         <div class="col-lg-6 col-sm-12">
-          <form method="GET" action="{% url 'product_search' %}" class="search">
+          <form method="GET" action="{% url 'home:search' %}" class="search">
             <div class="input-group w-100">
               <input type="text" class="form-control" name="q"
               placeholder="Search" value="{{ query|default:"" }}"/>
@@ -92,64 +91,57 @@
 
         <div class="col-lg-4 col-sm-6 col-8">
           <div class="widgets-wrap float-md-right">
-
+            {% if user.is_authenticated %}
             <!-- Cart Icon with badge -->
             <div class="widget-header mr-3">
               <a href="{% url 'cart' %}" class="icon icon-sm rounded-circle border">
                 <i class="fa fa-shopping-cart"></i>
               </a>
-              {% if user.is_authenticated %}
-                <span class="badge badge-pill badge-danger notify">
-                  {{request.user.profile.get_cart_count}}
-                </span>
-              {% else %}
-                <span class="badge badge-pill badge-danger notify"></span>
-              {% endif %}
+              <span class="badge badge-pill badge-danger notify">
+                {{request.user.profile.get_cart_count}}
+              </span>
             </div>
 
             <!-- Profile Icon -->
             <div class="widget-header icontext">
-              {% if user.is_authenticated %}
-                {% if user.profile.profile_image %}
-                  <a href="{% url 'profile' username=user.username %}" 
-                  class="icon icon-sm rounded-circle border">
-                    <img
-                      src="{{ user.profile.profile_image.url }}"
-                      alt="Profile Image"
-                      class="rounded-circle"
-                      width="42"
-                      height="42"
-                    />
-                  </a>
-                {% else %}
-                  <a
-                    href="{% url 'profile' username=user.username %}"
-                    class="icon icon-sm rounded-circle border">
-                    <i class="fa fa-user"></i>
-                  </a>
-                {% endif %}
+              {% if user.profile.profile_image %}
+                <a href="{% url 'accounts:profile' username=user.username %}" 
+                class="icon icon-sm rounded-circle border">
+                  <img
+                    src="{{ user.profile.profile_image.url }}"
+                    alt="Profile Image"
+                    class="rounded-circle"
+                    width="42"
+                    height="42"
+                  />
+                </a>
               {% else %}
-                <a href="{% url 'login' %}" class="icon icon-sm rounded-circle border">
+                <a href="{% url 'accounts:profile' username=user.username %}"
+                   class="icon icon-sm rounded-circle border">
                   <i class="fa fa-user"></i>
                 </a>
               {% endif %}
-
-              <!-- Welcome Text and Logout Link -->
               <div class="text">
-                {% if request.user.is_authenticated %}
-                <span class="text-muted">Welcome, {{ request.user }}!</span>
+                <span class="text-muted">Welcome, {{ user.username }}!</span>
                 <div>
-                  <a href="{% url 'logout' %}">Logout</a>
+                  <a href="{% url 'accounts:logout' %}">Logout</a>
                 </div>
-                {% else %}
-                <span class="text-muted">Welcome</span>
-                <div>
-                  <a href="{% url 'login' %}">Sign in</a> |
-                  <a href="{% url 'register' %}">Register</a>
-                </div>
-                {% endif %}
               </div>
             </div>
+            {% else %}
+            <div class="widget-header icontext">
+              <a href="{% url 'accounts:login' %}" class="icon icon-sm rounded-circle border">
+                <i class="fa fa-user"></i>
+              </a>
+              <div class="text">
+                <span class="text-muted">Welcome!</span>
+                <div>
+                  <a href="{% url 'accounts:login' %}">Sign in</a> |
+                  <a href="{% url 'accounts:register' %}">Register</a>
+                </div>
+              </div>
+            </div>
+            {% endif %}
           </div>
         </div>
       </div>

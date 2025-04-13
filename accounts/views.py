@@ -1,96 +1,88 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 
-from .forms import UserRegistrationForm, UserLoginForm, ManagerLoginForm, EditProfileForm
-from accounts.models import User
-
-
-def create_manager():
-    """
-    to execute once on startup:
-    this function will call in online_shop/urls.py
-    """
-    if not User.objects.filter(email="manager@example.com").first():
-        user = User.objects.create_user(
-            "manager@example.com", 'shop manager' ,'managerpass1234'
-        )
-        # give this user manager role
-        user.is_manager = True
-        user.save()
+from .forms import UserRegistrationForm, UserLoginForm, UserUpdateForm, CustomPasswordChangeForm
+from accounts.models import Profile
 
 
-def manager_login(request):
-    if request.method == 'POST':
-        form = ManagerLoginForm(request.POST)
-        if form.is_valid():
-            data = form.cleaned_data
-            user = authenticate(
-                request, email=data['email'], password=data['password']
-            )
-            if user is not None and user.is_manager:
-                login(request, user)
-                return redirect('dashboard:products')
-            else:
-                messages.error(
-                    request, 'username or password is wrong', 'danger'
-                )
-                return redirect('accounts:manager_login')
-    else:
-        form = ManagerLoginForm()
-    context = {'form': form}
-    return render(request, 'manager_login.html', context)
-
-
-def user_register(request):
+def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            data = form.cleaned_data
-            user = User.objects.create_user(
-                data['email'], data['full_name'], data['password']
-            )
-            return redirect('accounts:user_login')
+            user = form.save()
+            messages.success(request, 'Registration successful. Please login.')
+            return redirect('accounts:login')
     else:
         form = UserRegistrationForm()
-    context = {'title':'Signup', 'form':form}
-    return render(request, 'register.html', context)
+    return render(request, 'accounts/register.html', {'form': form})
 
 
 def user_login(request):
     if request.method == 'POST':
-        form = UserLoginForm(request.POST)
+        form = UserLoginForm(data=request.POST)
         if form.is_valid():
-            data = form.cleaned_data
-            user = authenticate(
-                request, email=data['email'], password=data['password']
-            )
-            if user is not None:
-                login(request, user)
-                return redirect('shop:home_page')
-            else:
-                messages.error(
-                    request, 'username or password is wrong', 'danger'
-                )
-                return redirect('accounts:user_login')
+            user = form.get_user()
+            login(request, user)
+            messages.success(request, 'Login successful.')
+            return redirect('home:index')
     else:
         form = UserLoginForm()
-    context = {'title':'Login', 'form': form}
-    return render(request, 'login.html', context)
+    return render(request, 'accounts/login.html', {'form': form})
 
 
+@login_required
 def user_logout(request):
     logout(request)
-    return redirect('accounts:user_login')
+    messages.info(request, 'You have been logged out.')
+    return redirect('accounts:login')
 
 
+@login_required
 def edit_profile(request):
-    form = EditProfileForm(request.POST, instance=request.user)
-    if form.is_valid():
-        form.save()
-        messages.success(request, 'Your profile has been updated', 'success')
-        return redirect('accounts:edit_profile')
+    if request.method == 'POST':
+        user_form = UserUpdateForm(request.POST, instance=request.user)
+        if user_form.is_valid():
+            user_form.save()
+            messages.success(request, 'Your profile has been updated.')
+            return redirect('accounts:edit_profile')
     else:
-        form = EditProfileForm(instance=request.user)
-    context = {'title':'Edit Profile', 'form':form}
-    return render(request, 'edit_profile.html', context)
+        user_form = UserUpdateForm(instance=request.user)
+    
+    return render(request, 'accounts/edit_profile.html', {
+        'user_form': user_form,
+    })
+
+
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        form = CustomPasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your password has been changed.')
+            return redirect('accounts:edit_profile')
+    else:
+        form = CustomPasswordChangeForm(request.user)
+    
+    return render(request, 'accounts/change_password.html', {'form': form})
+
+
+@login_required
+def profile_view(request, username):
+    user = get_object_or_404(User, username=username)
+    return render(request, 'accounts/profile.html', {'profile_user': user})
+
+
+@login_required
+def order_history(request):
+    orders = request.user.orders.all().order_by('-created_at')
+    return render(request, 'accounts/order_history.html', {'orders': orders})
+
+
+@login_required
+def wishlist(request):
+    wishlist_items = request.user.wishlist.all()
+    return render(request, 'accounts/wishlist.html', {'wishlist_items': wishlist_items})
